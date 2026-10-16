@@ -31,6 +31,8 @@ WORLD_DIR = os.path.join(DATA_DIR, "worlds")
 MEMORY_DIR = os.path.join(DATA_DIR, "memories")
 BACKUP_DIR = os.path.join(DATA_DIR, "backups")
 TTS_CACHE_DIR = os.path.join(DATA_DIR, "ttscache")
+# 每设备独立数据空间（浏览器自动生成设备号，服务器按设备号分开存档）
+DEVICES_DIR = os.path.join(DATA_DIR, "devices")
 # 云部署：可用环境变量指定监听地址与端口（Render 等平台注入 PORT）
 _env_port = os.environ.get("WX_PORT") or os.environ.get("PORT")
 PORTS = [int(_env_port)] if _env_port else [8890, 8891, 8892, 8893]
@@ -375,8 +377,9 @@ def single_call_cap(pid, model):
     return 2500
 
 
-def load_config():
-    path = os.path.join(DATA_DIR, "config.json")
+def load_config(root=None):
+    root = root or DATA_DIR
+    path = os.path.join(root, "config.json")
     cfg = json.loads(json.dumps(DEFAULT_CONFIG))
     changed = False
     try:
@@ -407,10 +410,10 @@ def load_config():
         cfg["chunk"] = json.loads(json.dumps(CHUNK_DEFAULT))
         changed = True
     if not cfg.get("status2000_migrated"):
-        cfg = migrate_status_detail_once(cfg)
+        cfg = migrate_status_detail_once(cfg, root)
         changed = True
     if not cfg.get("status_tier_migrated"):
-        cfg = migrate_status_tier_once(cfg)
+        cfg = migrate_status_tier_once(cfg, root)
         changed = True
     # 云端部署：用环境变量注入接口配置（密钥不进仓库、不落页面可见）
     _env_provider = os.environ.get("WX_LLM_PROVIDER", "").strip()
@@ -433,16 +436,17 @@ def load_config():
     return cfg
 
 
-def migrate_status_detail_once(cfg):
+def migrate_status_detail_once(cfg, root=None):
     """一次性迁移：把所有已有世界的状态块默认改为「详细（2000字以上）」。"""
     if cfg.get("status2000_migrated"):
         return cfg
+    wdir = os.path.join(root or DATA_DIR, "worlds")
     changed_cfg = False
     try:
-        for fn in os.listdir(WORLD_DIR):
+        for fn in os.listdir(wdir):
             if not fn.endswith(".json"):
                 continue
-            path = os.path.join(WORLD_DIR, fn)
+            path = os.path.join(wdir, fn)
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     d = json.load(f)
@@ -466,15 +470,16 @@ def migrate_status_detail_once(cfg):
     return cfg
 
 
-def migrate_status_tier_once(cfg):
+def migrate_status_tier_once(cfg, root=None):
     """一次性迁移：旧版「详细(2)」= 现在的中档(2)，统一升级到「详细 2000字(档3)」。"""
     if cfg.get("status_tier_migrated"):
         return cfg
+    wdir = os.path.join(root or DATA_DIR, "worlds")
     try:
-        for fn in os.listdir(WORLD_DIR):
+        for fn in os.listdir(wdir):
             if not fn.endswith(".json"):
                 continue
-            path = os.path.join(WORLD_DIR, fn)
+            path = os.path.join(wdir, fn)
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     d = json.load(f)
@@ -519,11 +524,17 @@ def parse_json(text):
 
 
 class Controller:
-    def __init__(self):
-        self.cfg = load_config()
-        os.makedirs(WORLD_DIR, exist_ok=True)
-        os.makedirs(MEMORY_DIR, exist_ok=True)
-        os.makedirs(BACKUP_DIR, exist_ok=True)
+    def __init__(self, root=None):
+        # 每个设备一个独立数据根目录（root=DATA_DIR 为默认/无设备号的空间）
+        self.root = root or DATA_DIR
+        self.worlds_dir = os.path.join(self.root, "worlds")
+        self.memories_dir = os.path.join(self.root, "memories")
+        self.backups_dir = os.path.join(self.root, "backups")
+        self.images_dir = os.path.join(self.root, "images")
+        self.cfg_path = os.path.join(self.root, "config.json")
+        for _d in (self.worlds_dir, self.memories_dir, self.backups_dir, self.images_dir):
+            os.makedirs(_d, exist_ok=True)
+        self.cfg = load_config(self.root)
         self.migrate_old_profiles()
         self.mode = "worlds"      # worlds | game
         self.profile = None       # 当前世界档案
@@ -544,13 +555,13 @@ class Controller:
     # ---------- 数据迁移（旧版 profiles → worlds） ----------
 
     def migrate_old_profiles(self):
-        old_dir = os.path.join(DATA_DIR, "profiles")
+        old_dir = os.path.join(self.root, "profiles")
         if not os.path.isdir(old_dir):
             return
         for f in os.listdir(old_dir):
             if not f.endswith(".json"):
                 continue
-            dst = os.path.join(WORLD_DIR, f)
+            dst = os.path.join(self.worlds_dir, f)
             if os.path.exists(dst):
                 continue
             try:
@@ -565,7 +576,7 @@ class Controller:
     # ---------- 世界档案 ----------
 
     def world_path(self, wid):
-        return os.path.join(WORLD_DIR, wid + ".json")
+        return os.path.join(self.worlds_dir, wid + ".json")
 
     def load_world(self, wid):
         try:
@@ -580,7 +591,7 @@ class Controller:
 
     def list_worlds(self):
         result = []
-        for f in os.listdir(WORLD_DIR):
+        for f in os.listdir(self.worlds_dir):
             if not f.endswith(".json"):
                 continue
             wid = f[:-5]
@@ -609,7 +620,7 @@ class Controller:
 
     def delete_world(self, wid):
         self.backup_memory(wid, note="删除世界前自动备份")
-        for path in (self.world_path(wid), os.path.join(MEMORY_DIR, wid + ".json")):
+        for path in (self.world_path(wid), os.path.join(self.memories_dir, wid + ".json")):
             try:
                 if os.path.exists(path):
                     os.remove(path)
@@ -619,7 +630,7 @@ class Controller:
     # ---------- 记忆（自动保存） ----------
 
     def memory_path(self, wid):
-        return os.path.join(MEMORY_DIR, wid + ".json")
+        return os.path.join(self.memories_dir, wid + ".json")
 
     def load_memory(self, wid):
         try:
@@ -649,7 +660,7 @@ class Controller:
         if not mem:
             return
         ts = time.strftime("%Y%m%d_%H%M%S")
-        path = os.path.join(BACKUP_DIR, f"{wid}_{ts}.json")
+        path = os.path.join(self.backups_dir, f"{wid}_{ts}.json")
         with open(path, "w", encoding="utf-8") as f:
             json.dump({"note": note, "profile": self.load_world(wid),
                        "history": mem, "backed_up_at": ts}, f, ensure_ascii=False, indent=2)
@@ -1091,19 +1102,19 @@ class Controller:
         data = {"worlds": {}, "memories": {},
                 "current_id": (self.profile or {}).get("id", ""), "updated_at": 0}
         try:
-            for fn in os.listdir(WORLD_DIR):
+            for fn in os.listdir(self.worlds_dir):
                 if not fn.endswith(".json"):
                     continue
                 try:
-                    with open(os.path.join(WORLD_DIR, fn), "r", encoding="utf-8") as f:
+                    with open(os.path.join(self.worlds_dir, fn), "r", encoding="utf-8") as f:
                         data["worlds"][fn[:-5]] = json.load(f)
                 except Exception:
                     pass
-            for fn in os.listdir(MEMORY_DIR):
+            for fn in os.listdir(self.memories_dir):
                 if not fn.endswith(".json"):
                     continue
                 try:
-                    with open(os.path.join(MEMORY_DIR, fn), "r", encoding="utf-8") as f:
+                    with open(os.path.join(self.memories_dir, fn), "r", encoding="utf-8") as f:
                         m = json.load(f)
                     data["memories"][fn[:-5]] = m
                     data["updated_at"] = max(data["updated_at"], int(m.get("updated_at", 0)))
@@ -1123,13 +1134,13 @@ class Controller:
         try:
             for wid, prof in worlds.items():
                 if isinstance(prof, dict) and prof.get("id"):
-                    with open(os.path.join(WORLD_DIR, str(prof["id"]) + ".json"),
+                    with open(os.path.join(self.worlds_dir, str(prof["id"]) + ".json"),
                               "w", encoding="utf-8", newline="\n") as f:
                         json.dump(prof, f, ensure_ascii=False, indent=2)
                     n_w += 1
             for wid, mem in memories.items():
                 if isinstance(mem, dict) and "history" in mem:
-                    with open(os.path.join(MEMORY_DIR, str(wid) + ".json"),
+                    with open(os.path.join(self.memories_dir, str(wid) + ".json"),
                               "w", encoding="utf-8", newline="\n") as f:
                         json.dump(mem, f, ensure_ascii=False, indent=2)
                     n_m += 1
@@ -1954,7 +1965,7 @@ class Controller:
 
     def save_config(self):
         try:
-            with open(os.path.join(DATA_DIR, "config.json"), "w", encoding="utf-8") as f:
+            with open(self.cfg_path, "w", encoding="utf-8") as f:
                 json.dump(self.cfg, f, ensure_ascii=False, indent=2)
         except Exception:
             pass
@@ -2034,7 +2045,7 @@ class Controller:
                     final_prompt = (prompt + " 剧情背景：" + ctx[:300]).strip() or prompt
         if not final_prompt:
             raise llm.LLMError("请描述想生成的画面，或先开始一段剧情")
-        fname = llm.image_generate(final_prompt, self.cfg, os.path.join(DATA_DIR, "images"))
+        fname = llm.image_generate(final_prompt, self.cfg, self.images_dir)
         # 图片作为对话的一部分写入记忆：更新/重启后依然显示在原位置
         self.history.append({"role": "image", "content": fname, "reasoning": ""})
         self.save_memory()
@@ -2047,16 +2058,30 @@ class Controller:
 # =========================================================
 
 _CONTROLLER = None
+_CONTROLLERS = {}
 _CONTROLLER_LOCK = threading.Lock()
 
 
-def get_controller():
-    """延迟创建控制器（桌面版可在首次请求前覆盖数据目录）。"""
-    global _CONTROLLER
+def sanitize_device(device):
+    d = re.sub(r"[^A-Za-z0-9_-]", "", str(device or ""))
+    return d[:40]
+
+
+def get_controller(device=None):
+    """每设备一个独立控制器（各自的存档与密钥）。无设备号 → 默认空间。"""
+    global _CONTROLLER, _CONTROLLERS
+    did = sanitize_device(device)
+    if not did:
+        with _CONTROLLER_LOCK:
+            if _CONTROLLER is None:
+                _CONTROLLER = Controller()
+            return _CONTROLLER
     with _CONTROLLER_LOCK:
-        if _CONTROLLER is None:
-            _CONTROLLER = Controller()
-        return _CONTROLLER
+        c = _CONTROLLERS.get(did)
+        if c is None:
+            c = Controller(root=os.path.join(DEVICES_DIR, did))
+            _CONTROLLERS[did] = c
+        return c
 
 
 class GameServer(ThreadingHTTPServer):
@@ -2135,7 +2160,11 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(404, "Not Found", "text/plain; charset=utf-8")
         elif path.startswith("/images/"):
             fname = os.path.basename(path)
-            full = os.path.join(DATA_DIR, "images", fname)
+            # 图片属于各设备独立空间：设备号取自查询参数或请求头
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            device = (q.get("device") or [""])[0] or self.headers.get("X-WX-Device") or ""
+            ctrl = get_controller(device)
+            full = os.path.join(ctrl.images_dir, fname)
             if os.path.exists(full):
                 try:
                     with open(full, "rb") as f:
@@ -2155,7 +2184,8 @@ class Handler(BaseHTTPRequestHandler):
             rate = (q.get("rate") or [""])[0]
             pitch = (q.get("pitch") or [""])[0]
             code = (q.get("code") or [""])[0]
-            ctrl = get_controller()
+            device = (q.get("device") or [""])[0] or self.headers.get("X-WX-Device") or ""
+            ctrl = get_controller(device)
             if (not local) and ctrl.access_code and code != ctrl.access_code:
                 self._send(200, json.dumps({"error": "need_code"}, ensure_ascii=False).encode("utf-8"),
                            "application/json; charset=utf-8")
@@ -2184,7 +2214,8 @@ class Handler(BaseHTTPRequestHandler):
             payload = {}
         local = (self.client_address[0] in ("127.0.0.1", "::1")) and (os.environ.get("WX_FORCE_CODE") != "1")
         code = self.headers.get("X-WX-Code") or ""
-        self._send(200, get_controller().handle(payload, code, local))
+        device = self.headers.get("X-WX-Device") or ""
+        self._send(200, get_controller(device).handle(payload, code, local))
 
 
 def main():
