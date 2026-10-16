@@ -32,6 +32,49 @@ function setBusy(b) {
   $("#textin").disabled = b;
 }
 
+/* ================= 本机存档（进度保存在本浏览器，云端重置也不丢） ================= */
+let wxLocalRestored = false;
+let wxDumpTimer = null;
+function wxLocalSave() {
+  try { return JSON.parse(localStorage.getItem("wx_local_save") || "null"); }
+  catch (e) { return null; }
+}
+function wxLocalStore(blob) {
+  try {
+    localStorage.setItem("wx_local_save", JSON.stringify(blob));
+    const b = document.getElementById("wx-local-badge");
+    if (b) b.textContent = "💾 已存本机 " + new Date().toTimeString().slice(0, 5);
+  } catch (e) {}
+}
+function wxLocalBadge() {
+  if (document.getElementById("wx-local-badge")) return;
+  const d = document.createElement("div");
+  d.id = "wx-local-badge";
+  d.style.cssText = "position:fixed;right:14px;bottom:70px;z-index:80;background:rgba(255,253,246,.93);border:1px solid #e0c89a;color:#8a6a3a;font-size:11px;font-weight:700;padding:4px 10px;border-radius:14px;pointer-events:none";
+  d.textContent = wxLocalSave() ? "💾 已存本机" : "💾 本机存档开启";
+  document.body.appendChild(d);
+}
+function wxScheduleDump() {
+  if (wxDumpTimer) return;
+  wxDumpTimer = setTimeout(() => {
+    wxDumpTimer = null;
+    call({ action: "dump_all" }).then((s) => {
+      if (s && s.assist && s.assist.worlds) wxLocalStore(s.assist);
+    }).catch(() => {});
+  }, 3000);
+}
+function wxMaybeRestore(s) {
+  if (wxLocalRestored) return;
+  wxLocalRestored = true;
+  const blob = wxLocalSave();
+  if (!blob || !blob.worlds || !Object.keys(blob.worlds).length) return;
+  if (s.mode === "worlds" && (!s.worlds || !s.worlds.length)) {
+    call({ action: "restore_all", data: blob }).then((s2) => {
+      if (s2 && s2.assist && s2.assist.ok) applyState(s2);
+    }).catch(() => {});
+  }
+}
+
 function showTyping(b) {
   $("#typing").classList.toggle("hidden", !b);
 }
@@ -487,6 +530,14 @@ function appendMsg(m, isLast, idx) {
 
 function applyState(s) {
   state = s;
+  wxLocalBadge();
+  // 云端进度为空时，用本机存档自动恢复
+  wxMaybeRestore(s);
+  // 存档变化后，自动把最新进度备份到本机浏览器
+  if (["say", "start", "world_create", "world_delete", "world_edit",
+       "delete_msg", "regenerate", "restart"].includes(s.op)) {
+    wxScheduleDump();
+  }
   // 切换世界/重开/删除时停止朗读并清空配音缓存，避免队列错位
   if (s.mode !== "game" ||
       ["world_open", "world_create", "world_edit", "restart", "start", "delete_msg"].includes(s.op)) {
