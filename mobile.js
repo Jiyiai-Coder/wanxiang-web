@@ -96,6 +96,8 @@ function wxMaybeRestore(s) {
 
 function applyState(s) {
   bootHide();
+  // 需要输码时，只保留输码界面，不切换到其它屏幕
+  if (s && s.error === "need_code") return;
   state = s;
   if (s.error && s.error !== lastErrorShown) {
     lastErrorShown = s.error;
