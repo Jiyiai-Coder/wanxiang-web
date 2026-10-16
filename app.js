@@ -31,6 +31,7 @@ async function call(payload) {
   if (!r.ok) throw new Error("HTTP " + r.status);
   const s = await r.json();
   if (s && s.error === "need_code") {
+    try { bootHide(); } catch (e) {}
     showPinOverlay();
   }
   return s;
