@@ -95,6 +95,7 @@ function wxMaybeRestore(s) {
 /* ================= 状态应用 ================= */
 
 function applyState(s) {
+  bootHide();
   state = s;
   if (s.error && s.error !== lastErrorShown) {
     lastErrorShown = s.error;
@@ -629,9 +630,22 @@ $("#tin").addEventListener("input", () => {
 
 /* ================= 启动 ================= */
 
+function bootHide() {
+  const el = document.getElementById("boot-loading");
+  if (el) el.remove();
+}
+function bootFail(msg) {
+  const el = document.getElementById("boot-msg");
+  if (el) {
+    el.textContent = msg;
+    el.style.color = "#d07b6e";
+  }
+}
+
 call({ action: "state" })
-  .then(applyState)
+  .then((s) => { bootHide(); applyState(s); })
   .catch((er) => {
-    $("#pin-msg").textContent = "⚠ 连接失败，请检查网络后刷新";
+    bootFail("⚠ 连接服务器失败：" + er.message +
+      "\n请确认网络正常后刷新本页（Mac 按 ⌘+Shift+R）。若长时间打不开，可能是服务器正在唤醒，等 60 秒再刷新。");
     showPin();
   });
