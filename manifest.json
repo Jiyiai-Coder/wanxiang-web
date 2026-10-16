@@ -1,0 +1,12 @@
+{
+  "name": "万象幻境",
+  "short_name": "万象幻境",
+  "description": "全自由 AI 文字世界",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5e8c8",
+  "theme_color": "#d4af37",
+  "icons": [
+    { "src": "/icon512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
