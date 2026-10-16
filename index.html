@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>万象幻境 · 全自由 AI 文字世界</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon512.png">
+<link rel="apple-touch-icon" href="icon512.png">
+<meta name="theme-color" content="#d4af37">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+</head>
+<body>
+
+<!-- ═══════════ 屏一：世界列表 ═══════════ -->
+<div id="screen-worlds" class="screen hidden">
+  <header class="big-title">
+    <div class="title">万 象 幻 境</div>
+    <div class="subtitle">你写档案 · AI 演世界 · 全自动保存</div>
+  </header>
+  <div id="worlds-wrap">
+    <div id="worlds-list"></div>
+    <button id="btn-create" class="primary big">➕ 创建新世界</button>
+  </div>
+</div>
+
+<!-- ═══════════ 屏二：创建/编辑世界向导 ═══════════ -->
+<div id="screen-wizard" class="screen hidden">
+  <header class="big-title small">
+    <div class="title" id="wizard-title">创建新世界</div>
+    <div class="subtitle">写得越详细，AI 演得越像。没灵感？点「✨ AI 生成」让 AI 帮你写。</div>
+  </header>
+  <div id="wizard-wrap">
+    <div id="wizard-form">
+      <label>世界名称（必填）
+        <input id="f-name" placeholder="如：云梦仙途 / 蒸汽朋克大都会 / 末日废土……" maxlength="50">
+      </label>
+      <label>一句话简介
+        <input id="f-desc" placeholder="如：你是穿越而来的修仙者，在这方世界求道结缘。" maxlength="200">
+      </label>
+      <div class="field-head"><label>真实程度</label></div>
+      <div class="realism-row">
+        <label><input type="radio" name="realism" value="1"> 轻松</label>
+        <label><input type="radio" name="realism" value="2" checked> 常规</label>
+        <label><input type="radio" name="realism" value="3"> 真实</label>
+        <label><input type="radio" name="realism" value="4"> 硬核真实</label>
+        <label><input type="radio" name="realism" value="5"> 极致真实</label>
+      </div>
+      <div class="realism-tip">档位越高：人物越有独立人格、世界越写实、越不轻易服从玩家指令。</div>
+      <div class="field-head"><label>文本输出设置</label></div>
+      <div class="output-row">
+        <label>默认字数
+          <select id="f-out-len">
+            <option value="1">短篇（150~300字）</option>
+            <option value="2" selected>中篇（300~600字）</option>
+            <option value="3">长篇（600~1000字）</option>
+            <option value="4">超长篇（1000~1500字）</option>
+            <option value="5">史诗篇（1500~2200字）</option>
+            <option value="6">巨篇（2200~3000字）</option>
+          </select>
+        </label>
+        <label class="out-status"><input type="checkbox" id="f-out-status" checked> 状态显示（世界状态·人物状态·人际关系）</label>
+        <label>状态档次
+          <select id="f-out-detail">
+            <option value="1">精简（每项一行）</option>
+            <option value="2">标准（约800字）</option>
+            <option value="3" selected>详细（2000字以上 · 默认）</option>
+            <option value="4">极详（3500字以上）</option>
+          </select>
+        </label>
+        <label class="out-status"><input type="checkbox" id="f-opt-on"> 行动选项（可点击推进剧情）</label>
+        <label>选项条数
+          <select id="f-opt-count">
+            <option value="2">2 条</option>
+            <option value="3" selected>3 条</option>
+            <option value="4">4 条</option>
+            <option value="5">5 条</option>
+            <option value="6">6 条</option>
+            <option value="7">7 条</option>
+          </select>
+        </label>
+        <label>选项长度
+          <select id="f-opt-len">
+            <option value="1">短（8字内）</option>
+            <option value="2" selected>中（12~20字）</option>
+            <option value="3">长（20~40字）</option>
+          </select>
+        </label>
+      </div>
+      <button id="btn-ai-from-brief" class="primary brief-btn">✨ 只填了名称和简介？一键生成完整世界观</button>
+      <div class="field-head">
+        <label>世界观背景</label>
+        <button class="ai-btn" data-field="world">🤖 AI 续写此项</button>
+      </div>
+      <textarea id="f-world" rows="5" placeholder="这个世界是怎样的？时代、地理、力量体系、势力格局……"></textarea>
+      <div class="field-head">
+        <label>主角设定</label>
+        <button class="ai-btn" data-field="protagonist">🤖 AI 续写此项</button>
+      </div>
+      <textarea id="f-protagonist" rows="3" placeholder="玩家是谁？什么身份？处于什么境地？"></textarea>
+      <div class="field-head">
+        <label>人物设定</label>
+        <button class="ai-btn" data-field="characters">🤖 AI 续写此项</button>
+      </div>
+      <textarea id="f-characters" rows="5" placeholder="出场人物的名字、身份、性格、外貌、与主角的关系……"></textarea>
+      <div class="field-head">
+        <label>文风要求</label>
+        <button class="ai-btn" data-field="style">🤖 AI 续写此项</button>
+      </div>
+      <textarea id="f-style" rows="2" placeholder="如：仙侠古风 / 现代都市 / 悬疑推理 / 甜蜜恋爱……"></textarea>
+      <div class="field-head">
+        <label>额外规则</label>
+        <button class="ai-btn" data-field="rules">🤖 AI 续写此项</button>
+      </div>
+      <textarea id="f-rules" rows="2" placeholder="任何想强调的规则，可留空。"></textarea>
+    </div>
+    <div id="discuss-panel">
+      <div class="discuss-head">💬 世界观讨论区 <span>输入几个字，AI 理解你的想法并给出拓展方向，点选即可并入世界观</span></div>
+      <div id="discuss-msgs"></div>
+      <div id="discuss-inputrow">
+        <input id="discuss-input" placeholder="如：修仙世界，正道魔道之争……" maxlength="500">
+        <button id="btn-discuss">💬 讨论</button>
+      </div>
+    </div>
+    <div id="wizard-btns">
+      <div id="wizard-feedback"></div>
+      <button id="btn-open-revise" class="big revise-open-btn">💬 提修改意见（可勾选栏目 / 全部修改）</button>
+      <button id="btn-ai-all" class="primary big">✨ AI 补全档案（保留已填内容）</button>
+      <div id="wizard-actions">
+        <button id="btn-save-world" class="primary">💾 保存并进入世界</button>
+        <button id="btn-cancel-wizard" class="ghost">返回世界列表</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 屏三：游戏 ═══════════ -->
+<div id="screen-game" class="screen hidden">
+  <header id="titlebar">
+    <div class="title">万 象 幻 境</div>
+    <div class="subtitle" id="g-world-name">—</div>
+  </header>
+  <div id="statusbar">
+    <span id="st-saved">💾 自动保存：—</span>
+    <span id="st-ai"></span>
+    <span id="st-img"></span>
+    <span id="st-reasoning"></span>
+    <button id="btn-fullscreen" class="bar-btn">⛶ 进入全屏</button>
+    <button id="btn-overview" class="bar-btn">☰ 对话总览</button>
+    <button id="btn-music" class="bar-btn">🎵 音乐</button>
+    <button id="btn-auto" class="bar-btn">▶ 自动翻动</button>
+    <span id="auto-speed-wrap">
+      <input id="auto-speed" type="range" min="10" max="150" step="5" value="40">
+      <span id="auto-speed-val">40px/秒</span>
+    </span>
+  </div>
+  <main id="main">
+    <section id="logwrap">
+      <div id="tts-progress" class="hidden"></div>
+      <div id="log"></div>
+      <div id="typing" class="hidden">💭 万象正在思考中……（V4 Pro 思考需要一点时间，请耐心等待）</div>
+    </section>
+    <aside id="side">
+      <div id="profile-card">
+        <div id="p-name"></div>
+        <div id="p-desc"></div>
+        <div id="p-meta"></div>
+        <div id="p-realism-row">
+          <span>真实程度</span>
+          <select id="sel-realism">
+            <option value="1">轻松</option>
+            <option value="2">常规</option>
+            <option value="3">真实</option>
+            <option value="4">硬核真实</option>
+            <option value="5">极致真实</option>
+          </select>
+        </div>
+        <div id="p-output-row">
+          <span>输出</span>
+          <select id="sel-out-len" title="默认字数">
+            <option value="1">短篇150~300</option>
+            <option value="2">中篇300~600</option>
+            <option value="3">长篇600~1000</option>
+            <option value="4">超长1000~1500</option>
+            <option value="5">史诗1500~2200</option>
+            <option value="6">巨篇2200~3000</option>
+          </select>
+          <select id="sel-out-detail" title="状态档次">
+            <option value="1">状态精简</option>
+            <option value="2">状态标准800</option>
+            <option value="3">状态2000字</option>
+            <option value="4">状态极详3500</option>
+          </select>
+          <label class="out-toggle" title="状态显示开关"><input type="checkbox" id="sel-out-status"> 状态</label>
+        </div>
+        <div id="p-opt-row">
+          <span>选项</span>
+          <label class="out-toggle" title="行动选项开关"><input type="checkbox" id="sel-opt-on"> 开</label>
+          <select id="sel-opt-count" title="选项条数">
+            <option value="2">2条</option>
+            <option value="3">3条</option>
+            <option value="4">4条</option>
+            <option value="5">5条</option>
+            <option value="6">6条</option>
+            <option value="7">7条</option>
+          </select>
+          <select id="sel-opt-len" title="选项长度">
+            <option value="1">短</option>
+            <option value="2">中</option>
+            <option value="3">长</option>
+          </select>
+        </div>
+      </div>
+      <div id="side-btns">
+        <button id="btn-start" class="sbtn gold big">🚀 开始冒险（AI 写开篇）</button>
+        <button id="btn-edit" class="sbtn">✏️ 编辑本世界档案</button>
+        <button id="btn-switch" class="sbtn">🌍 切换 / 管理世界</button>
+        <button id="btn-restart" class="sbtn warn">🆕 重新开始本世界</button>
+        <button id="btn-settings" class="sbtn">⚙ 设置</button>
+      </div>
+      <div id="side-note">进度自动保存，切换世界互不影响</div>
+    </aside>
+  </main>
+  <footer id="controls">
+    <div id="imgrow" class="hidden">
+      <span class="imgrow-label">🎨 生图</span>
+      <input id="img-desc" placeholder="画面描述（可留空——AI 将根据当前剧情自动生成插图）" maxlength="500">
+      <button id="btn-img-gen2">生成插图</button>
+      <span id="img-status2"></span>
+    </div>
+    <div id="inputrow">
+      <textarea id="textin" rows="1" placeholder="输入你想做的事、说的话……（Enter 发送，Shift+Enter 换行）" maxlength="4000"></textarea>
+      <button id="btn-tts-play" class="icon-btn" title="朗读：有勾选播所选，否则从头朗读全文">🔊</button>
+      <button id="btn-tts-stop" class="icon-btn" title="停止朗读" disabled>⏹</button>
+      <button id="btn-tts-select" class="icon-btn" title="连播选择：点击消息勾选，再点🔊连播">☑</button>
+      <button id="btn-img-toggle" class="icon-btn" title="剧情生图">🎨</button>
+      <button id="sendbtn">发送 ⏎</button>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══════════ 设置弹窗（含 API 接口管理） ═══════════ -->
+<div id="settings-mask" class="hidden">
+  <div id="settings-modal">
+    <h3>⚙ 设置</h3>
+    <div class="chunk-box">
+      <label class="s-label">
+        <input type="checkbox" id="s-chunk-on" checked>
+        📜 长文分段生成（仅当模型一次写不够长时才分段）
+      </label>
+      <div class="chunk-row">
+        <label>分段模式
+          <select id="s-chunk-mode">
+            <option value="auto" selected>自动（按模型能力）</option>
+            <option value="off">关闭（永远一次写完）</option>
+            <option value="on">强制分段</option>
+          </select>
+        </label>
+      </div>
+      <div class="chunk-row">
+        <label>每段约
+          <select id="s-chunk-part">
+            <option value="600">600 字</option>
+            <option value="1200" selected>1200 字</option>
+            <option value="2000">2000 字</option>
+            <option value="3000">3000 字</option>
+          </select>
+        </label>
+        <label>最多
+          <select id="s-chunk-max">
+            <option value="2">2 段</option>
+            <option value="3">3 段</option>
+            <option value="4" selected>4 段</option>
+            <option value="6">6 段</option>
+            <option value="8">8 段</option>
+          </select>
+        </label>
+      </div>
+      <div class="s-tip" id="chunk-hint">付费强模型（如 DeepSeek V4 系列）默认一次写完，不分段。</div>
+    </div>
+    <hr class="s-hr">
+    <div id="s-phone-info" class="s-phone"></div>
+    <label class="s-label">
+      <input type="checkbox" id="s-show-reasoning">
+      💭 显示 AI 思考过程
+    </label>
+    <div class="s-desc">
+      开启后，每条 AI 回复下方会出现「💭 思考过程（点击展开）」折叠栏，
+      可以看到 V4 Pro 是怎么盘算剧情的；关闭后界面更简洁。
+    </div>
+    <hr class="s-hr">
+    <h4 class="s-h4">🔊 语音朗读</h4>
+    <label class="s-label">
+      <input type="checkbox" id="s-tts-on">
+      自动朗读 AI 回复（新剧情自动读出）
+    </label>
+    <div class="s-tip">朗读模式：</div>
+    <label class="s-label">
+      <input type="radio" name="tts-mode" id="tts-mode-normal" checked>
+      一般模式 —— 整段一个声线朗读，最稳定、即点即播
+    </label>
+    <label class="s-label">
+      <input type="radio" name="tts-mode" id="tts-mode-cast">
+      识别分配模式 —— AI 分角色多声线配音（首播稍慢，逐句合成）
+    </label>
+    <h4 class="s-h4">🎭 角色配音（Edge 神经语音 · 真实不同人声）</h4>
+    <div class="s-tip" id="s-char-list">进入世界后自动识别角色；若档案修改过，可点下方按钮重新识别。</div>
+    <button id="btn-char-refresh" class="ghost small">🔄 重新识别本世界角色</button>
+    <div id="voice-cast-grid"></div>
+    <div class="s-tip">旁白与六种女声、男主角、男配角分别使用不同的神经语音合成；可换语音并微调音调（-30~+30Hz）与语速（±30%），保存后自动生效。</div>
+    <hr class="s-hr">
+    <h4 class="s-h4">🔌 API 接口管理</h4>
+    <div class="api-row">
+      <label class="api-label">💬 对话模型
+        <select id="sel-text"></select>
+      </label>
+      <label class="api-label">🎨 图像模型
+        <select id="sel-image"></select>
+      </label>
+    </div>
+    <div id="provider-cards"></div>
+    <button id="btn-add-provider" class="ghost small">➕ 添加自定义厂商</button>
+    <div class="s-tip">
+      对话与图像可以分别使用不同厂商。修改厂商信息后点击「💾 保存配置」生效。
+      生成的图片会自动保存到游戏数据目录的 images 文件夹。
+    </div>
+    <div id="s-btns">
+      <button id="btn-save-providers" class="primary">💾 保存配置</button>
+      <button id="btn-close-settings" class="ghost">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 访问码弹窗（手机远程访问保护） ═══════════ -->
+<div id="pin-mask" class="hidden">
+  <div id="pin-modal">
+    <h3 id="pin-title">🔑 输入访问码</h3>
+    <div id="pin-sub">本游戏需要访问码。请向游戏主人询问访问码。</div>
+    <input id="pin-input" type="tel" inputmode="numeric" maxlength="8" placeholder="6 位数字访问码">
+    <div id="pin-btns">
+      <button id="pin-ok" class="primary">进入</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 修改意见弹窗 ═══════════ -->
+<div id="revise-mask" class="hidden">
+  <div id="revise-modal">
+    <h3>💬 告诉 AI 你想怎么改</h3>
+    <div class="revise-tip">写下修改意见，勾选要修改的栏目（不勾选的一字不动）。</div>
+    <textarea id="revise-input" rows="4" maxlength="2000" placeholder="例：把世界观改得更黑暗一点；主角加上身世之谜；增加一个反派组织……"></textarea>
+    <div class="revise-fields">
+      <label><input type="checkbox" id="rv-world" checked> 世界观背景</label>
+      <label><input type="checkbox" id="rv-protagonist"> 主角设定</label>
+      <label><input type="checkbox" id="rv-characters"> 人物设定</label>
+      <label><input type="checkbox" id="rv-style"> 文风要求</label>
+      <label><input type="checkbox" id="rv-rules"> 额外规则</label>
+      <label class="rv-all"><input type="checkbox" id="rv-all" checked> 全部修改</label>
+    </div>
+    <div id="revise-err"></div>
+    <div id="revise-btns">
+      <button id="revise-cancel" class="ghost">取消</button>
+      <button id="revise-go" class="primary">✨ 按意见修改</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 输入弹窗（重命名等） ═══════════ -->
+<div id="prompt-mask" class="hidden">
+  <div id="prompt-modal">
+    <h3 id="prompt-title">输入</h3>
+    <input id="prompt-input" placeholder="" maxlength="60">
+    <div id="prompt-btns">
+      <button id="prompt-ok" class="primary">确定</button>
+      <button id="prompt-cancel" class="ghost">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 音乐设置弹窗 ═══════════ -->
+<div id="music-mask" class="hidden">
+  <div id="music-modal">
+    <h3>🎵 音乐设置</h3>
+    <div class="m-row">
+      <button id="btn-music-play" class="primary">▶ 播放音乐</button>
+      <span id="m-now"></span>
+    </div>
+    <label class="m-label">🔊 音量：<span id="m-vol-val">30%</span>
+      <input id="m-volume" type="range" min="0" max="100" value="30">
+    </label>
+    <label class="m-label">☀️ 白天风格
+      <select id="m-day-style">
+        <option value="ambient">暧昧夜色（温暖小调 · 中速）</option>
+        <option value="melancholy">幽怨古风（羽调五声 · 缓慢凄美）</option>
+        <option value="ethereal">仙气缥缈（高音空灵 · 若隐若现）</option>
+        <option value="sweet">甜蜜温馨（明亮和声 · 轻快甜暖）</option>
+        <option value="zen">静夜禅意（极简低音 · 悠远入定）</option>
+      </select>
+    </label>
+    <label class="m-label inline">
+      <input type="checkbox" id="m-night-mode" checked> 🌙 夜晚模式（22:00–6:00 自动切换夜晚风格）
+    </label>
+    <label class="m-label">🌙 夜晚风格
+      <select id="m-night-style">
+        <option value="melancholy">幽怨古风（羽调五声 · 缓慢凄美）</option>
+        <option value="zen">静夜禅意（极简低音 · 悠远入定）</option>
+        <option value="ambient">暧昧夜色（温暖小调 · 中速）</option>
+        <option value="ethereal">仙气缥缈（高音空灵 · 若隐若现）</option>
+        <option value="sweet">甜蜜温馨（明亮和声 · 轻快甜暖）</option>
+      </select>
+    </label>
+    <div id="m-btns">
+      <button id="btn-close-music" class="ghost">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 对话总览弹窗 ═══════════ -->
+<div id="overview-mask" class="hidden">
+  <div id="overview-modal">
+    <h3>☰ 对话总览 <span id="ov-count"></span></h3>
+    <div id="overview-list"></div>
+    <div id="overview-btns">
+      <div id="ov-tools">
+        <button id="ov-sel-all" class="ghost small">☑ 全选</button>
+        <button id="ov-sel-clear" class="ghost small">☐ 清空</button>
+        <span id="ov-sel-count"></span>
+        <button id="ov-play" class="primary small">▶ 连播所选</button>
+      </div>
+      <button id="btn-close-overview" class="ghost">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 确认弹窗 ═══════════ -->
+<div id="confirm-mask" class="hidden">
+  <div id="confirm-modal">
+    <h3 id="confirm-title">确认</h3>
+    <div id="confirm-text"></div>
+    <div id="confirm-btns">
+      <button id="confirm-ok" class="primary warn-bg">确定</button>
+      <button id="confirm-cancel" class="ghost">取消</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
