@@ -2687,6 +2687,15 @@ post({ action: "state" }, { noTyping: true })
   .catch((e) => {
     bootFail("⚠ 连接服务器失败：" + e.message + "\n请确认网络正常后刷新本页（Mac 按 ⌘+Shift+R 强制刷新）。若长时间打不开，可能是服务器正在唤醒，等 60 秒再刷新。");
   });
+// 兜底：无论发生什么，12 秒后一定要撤掉连接提示层，避免挡住后面的界面
+setTimeout(() => {
+  bootHide();
+  const el = document.getElementById("boot-msg");
+  if (el && !state) {
+    el.textContent = "连接较慢……正在继续尝试，也可以直接刷新本页。";
+    el.style.color = "#8a5a2a";
+  }
+}, 12000);
 // 双保险：界面渲染成功后也隐藏连接层
 const _origApply = applyState;
 applyState = function (s) {
