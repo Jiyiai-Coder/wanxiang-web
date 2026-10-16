@@ -2104,7 +2104,17 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urllib.parse.urlparse(self.path).path
         if path in ("/", "/index.html"):
-            self._serve_file("index.html", "text/html; charset=utf-8")
+            ua = self.headers.get("User-Agent") or ""
+            if path == "/" and re.search(r"(iPhone|iPad|Android|Mobile|Windows Phone|MQQBrowser|MicroMessenger)", ua, re.I):
+                self._serve_file("mobile.html", "text/html; charset=utf-8")
+            else:
+                self._serve_file("index.html", "text/html; charset=utf-8")
+        elif path in ("/m", "/mobile", "/mobile.html"):
+            self._serve_file("mobile.html", "text/html; charset=utf-8")
+        elif path == "/mobile.css":
+            self._serve_file("mobile.css", "text/css; charset=utf-8")
+        elif path == "/mobile.js":
+            self._serve_file("mobile.js", "application/javascript; charset=utf-8")
         elif path == "/style.css":
             self._serve_file("style.css", "text/css; charset=utf-8")
         elif path == "/app.js":
