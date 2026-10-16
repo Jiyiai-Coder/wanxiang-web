@@ -29,6 +29,8 @@ body {
   position: fixed; inset: 0; display: flex; flex-direction: column;
   height: 100dvh;
 }
+/* 输码界面必须始终盖在连接提示层之上 */
+#pin { z-index: 10000; }
 
 /* ---------- 顶栏 ---------- */
 .topbar {
