@@ -655,3 +655,11 @@ call({ action: "state" })
       "\n请确认网络正常后刷新本页（Mac 按 ⌘+Shift+R）。若长时间打不开，可能是服务器正在唤醒，等 60 秒再刷新。");
     showPin();
   });
+// 兜底：无论发生什么，12 秒后一定要撤掉连接提示层，避免挡住后面的界面
+setTimeout(() => {
+  bootHide();
+  const el = document.getElementById("boot-msg");
+  if (el && !state) {
+    el.textContent = "连接较慢……正在继续尝试，也可以直接刷新本页。";
+  }
+}, 12000);
