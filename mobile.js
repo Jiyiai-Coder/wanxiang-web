@@ -404,6 +404,7 @@ function renderSettings(s) {
     card.dataset.pid = pid;
     card.innerHTML =
       '<div class="p-name">' + escapeHtml(p.name || pid) + "</div>" +
+      '<input type="hidden" data-k="name" value="' + escapeHtml(p.name || pid) + '">' +
       '<div class="p-field">接口地址</div>' +
       '<input data-k="base_url" value="' + escapeHtml(p.base_url || "") + '" placeholder="https://…">' +
       '<div class="p-field">API Key（你自己的密钥）</div>' +
@@ -479,6 +480,8 @@ function collectProviders() {
       if (k === "model_custom") return;
       p[k] = el.value.trim();
     });
+    // 兜底：确保厂商名称存在（服务器按名称过滤）
+    if (!p.name) p.name = (card.querySelector(".p-name") || {}).textContent || pid;
     if (p.model === "__custom__") {
       const cu = card.querySelector('[data-k="model_custom"]');
       p.model = cu ? cu.value.trim() : "";
