@@ -13,10 +13,19 @@ let wxCode = localStorage.getItem("wx_code") || ""; // 手机远程访问码
 
 /* ================= 基础 ================= */
 
+function deviceId() {
+  let id = localStorage.getItem("wx_device_id");
+  if (!id) {
+    id = "d" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    localStorage.setItem("wx_device_id", id);
+  }
+  return id;
+}
+
 async function call(payload) {
   const r = await fetch("/api/action", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-WX-Code": wxCode },
+    headers: { "Content-Type": "application/json", "X-WX-Code": wxCode, "X-WX-Device": deviceId() },
     body: JSON.stringify(payload || {}),
   });
   if (!r.ok) throw new Error("HTTP " + r.status);
@@ -416,7 +425,8 @@ function appendMsg(m, isLast, idx) {
     const b = document.createElement("div");
     b.className = "bubble img-bubble";
     const img = document.createElement("img");
-    img.src = "/images/" + m.content;
+    img.src = "/images/" + encodeURIComponent(m.content) + "?code=" + encodeURIComponent(wxCode) +
+      "&device=" + encodeURIComponent(deviceId());
     img.alt = "剧情插图";
     const cap = document.createElement("div");
     cap.className = "img-cap";
@@ -2623,7 +2633,7 @@ $("#pin-ok").addEventListener("click", () => {
   if (!c) return;
   fetch("/api/action", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-WX-Code": c },
+    headers: { "Content-Type": "application/json", "X-WX-Code": c, "X-WX-Device": deviceId() },
     body: JSON.stringify({ action: "state" }),
   })
     .then((r) => r.json())
