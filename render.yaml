@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: wanxiang
+    runtime: docker
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: WX_HOST
+        value: 0.0.0.0
+      - key: WANXIANG_NO_BROWSER
+        value: "1"
+      - key: PYTHONUNBUFFERED
+        value: "1"
