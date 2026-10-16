@@ -2149,6 +2149,9 @@ class Handler(BaseHTTPRequestHandler):
                 self._serve_file("mobile.html", "text/html; charset=utf-8")
             else:
                 self._serve_file("index.html", "text/html; charset=utf-8")
+        elif path in ("/desktop", "/desktop.html", "/pc"):
+            # 固定桌面版入口（UA 误判时手动切换用）
+            self._serve_file("index.html", "text/html; charset=utf-8")
         elif path in ("/m", "/mobile", "/mobile.html"):
             self._serve_file("mobile.html", "text/html; charset=utf-8")
         elif path == "/mobile.css":
