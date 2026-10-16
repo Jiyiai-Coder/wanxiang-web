@@ -643,6 +643,10 @@ function bootFail(msg) {
     el.style.color = "#d07b6e";
   }
 }
+try {
+  const uaEl = document.getElementById("boot-ua");
+  if (uaEl) uaEl.textContent = "设备信息：" + (navigator.userAgent || "").slice(0, 130);
+} catch (e) {}
 
 call({ action: "state" })
   .then((s) => { bootHide(); applyState(s); })
