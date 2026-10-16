@@ -2098,6 +2098,21 @@ class GameServer(ThreadingHTTPServer):
         super().server_bind()
 
 
+def _is_mobile_ua(ua):
+    """精确判断是否为手机浏览器（微信桌面版/桌面浏览器不会被误判为手机）。"""
+    ua = ua or ""
+    if re.search(r"(iPhone|Android|Windows Phone|PlayStation|BlackBerry)", ua, re.I):
+        return True
+    if re.search(r"iPad", ua, re.I) and re.search(r"Mobile", ua, re.I):
+        return True
+    if "MicroMessenger" in ua:
+        # 微信内置浏览器：桌面版（Mac/Windows）UA 带桌面系统标识
+        if re.search(r"(MacWechat|WindowsWechat|Macintosh|Windows NT)", ua, re.I):
+            return False
+        return True
+    return bool(re.search(r"Mobile", ua, re.I)) and not re.search(r"(Macintosh|Windows NT)", ua, re.I)
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "WanXiang/2.0"
 
@@ -2130,7 +2145,7 @@ class Handler(BaseHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         if path in ("/", "/index.html"):
             ua = self.headers.get("User-Agent") or ""
-            if path == "/" and re.search(r"(iPhone|iPad|Android|Mobile|Windows Phone|MQQBrowser|MicroMessenger)", ua, re.I):
+            if path == "/" and _is_mobile_ua(ua):
                 self._serve_file("mobile.html", "text/html; charset=utf-8")
             else:
                 self._serve_file("index.html", "text/html; charset=utf-8")
