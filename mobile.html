@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2b2a45">
+<title>万象幻境</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon512.png">
+<link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+
+<!-- 访问码 -->
+<div id="pin" class="screen hidden">
+  <div class="pin-box">
+    <div class="logo">🏮</div>
+    <h1>万象幻境</h1>
+    <p class="sub">输入访问码进入你的世界</p>
+    <input id="pin-in" type="tel" inputmode="numeric" maxlength="8" placeholder="6 位访问码">
+    <button id="pin-ok">进入</button>
+    <div id="pin-msg"></div>
+  </div>
+</div>
+
+<!-- 世界列表 -->
+<div id="worlds" class="screen hidden">
+  <header class="topbar">
+    <div class="tb-title">🏮 万象幻境</div>
+    <button id="btn-add" class="tb-btn">＋ 新世界</button>
+  </header>
+  <div id="world-list"></div>
+  <div class="hint-line" id="worlds-hint">还没有世界，点右上角「＋ 新世界」开始创作</div>
+</div>
+
+<!-- 游戏 -->
+<div id="game" class="screen hidden">
+  <header class="topbar">
+    <button id="btn-back" class="tb-btn">‹</button>
+    <div class="tb-title" id="g-title">…</div>
+    <button id="btn-settings" class="tb-btn">⚙</button>
+  </header>
+  <div id="log"></div>
+  <div id="typing" class="hidden">✍ 万象正在书写……</div>
+  <div id="composer">
+    <textarea id="tin" rows="1" maxlength="3000" placeholder="说点什么，或选择下方行动……"></textarea>
+    <button id="send">发送</button>
+  </div>
+</div>
+
+<!-- 新世界 -->
+<div id="wizard" class="screen hidden">
+  <header class="topbar">
+    <button id="wiz-back" class="tb-btn">‹</button>
+    <div class="tb-title">创建世界</div>
+    <div class="tb-spacer"></div>
+  </header>
+  <div class="wiz-body">
+    <label>世界名称</label>
+    <input id="w-name" maxlength="30" placeholder="例如：云梦仙途">
+    <label>一句话简介（身份与目标）</label>
+    <textarea id="w-desc" maxlength="200" placeholder="例如：你是穿越而来的修仙者，求道结缘。"></textarea>
+    <button id="w-gen" class="big-btn ghost-btn">✨ 一键生成完整世界观</button>
+    <details id="w-adv">
+      <summary>▸ 手动填写详细设定（可选）</summary>
+      <label>世界观背景</label>
+      <textarea id="w-world" maxlength="800" placeholder="时代、地理、势力、规则……"></textarea>
+      <label>主角设定</label>
+      <textarea id="w-protagonist" maxlength="400" placeholder="你的身份、能力、处境……"></textarea>
+      <label>人物设定</label>
+      <textarea id="w-characters" maxlength="600" placeholder="每行一个人物：名字：身份与性格"></textarea>
+      <label>文风要求</label>
+      <input id="w-style" maxlength="200" placeholder="如：仙侠古风、冷峻写实">
+      <label>额外规则</label>
+      <input id="w-rules" maxlength="200" placeholder="如：伤势与时间真实">
+      <div class="w-row">
+        <label>真实程度
+          <select id="w-realism">
+            <option value="1">轻松</option>
+            <option value="2">写实</option>
+            <option value="3" selected>真实</option>
+            <option value="4">严苛</option>
+            <option value="5">极致</option>
+          </select>
+        </label>
+        <label>字数
+          <select id="w-len">
+            <option value="1">短篇</option>
+            <option value="2" selected>中篇</option>
+            <option value="3">长篇</option>
+            <option value="4">超长</option>
+          </select>
+        </label>
+        <label>状态
+          <select id="w-status-detail">
+            <option value="1" selected>简洁</option>
+            <option value="2">标准</option>
+            <option value="3">详细</option>
+          </select>
+        </label>
+      </div>
+    </details>
+    <button id="w-create" class="big-btn">🚀 创建并开始</button>
+  </div>
+</div>
+
+<!-- 设置 -->
+<div id="settings" class="screen hidden">
+  <header class="topbar">
+    <button id="s-back" class="tb-btn">‹</button>
+    <div class="tb-title">设置</div>
+    <div class="tb-spacer"></div>
+  </header>
+  <div class="set-body">
+    <div class="set-sec-title">🔌 当前接口（用你自己的 API Key）</div>
+    <select id="s-active"></select>
+    <div id="s-cards"></div>
+    <button id="s-add" class="ghost-btn">＋ 添加接口</button>
+    <button id="s-save" class="big-btn">保存接口设置</button>
+    <div id="s-msg" class="hint-line"></div>
+    <div class="set-sec-title">💾 数据</div>
+    <div class="hint-line" id="save-hint">每句话都会自动保存到你本机浏览器</div>
+    <button id="s-export" class="ghost-btn">📄 导出全部记录（txt）</button>
+  </div>
+</div>
+
+<div id="toast" class="hidden"></div>
+<script src="mobile.js"></script>
+</body>
+</html>
