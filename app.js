@@ -2677,6 +2677,10 @@ function bootFail(msg) {
     el.style.color = "#b8564a";
   }
 }
+try {
+  const uaEl = document.getElementById("boot-ua");
+  if (uaEl) uaEl.textContent = "设备信息：" + (navigator.userAgent || "").slice(0, 130);
+} catch (e) {}
 
 post({ action: "state" }, { noTyping: true })
   .then(() => bootHide())
