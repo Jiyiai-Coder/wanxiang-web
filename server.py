@@ -1086,6 +1086,67 @@ class Controller:
 
     # ---------- 入口 ----------
 
+    def do_dump_all(self):
+        """导出全部世界与记忆（供浏览器本地存档）。"""
+        data = {"worlds": {}, "memories": {},
+                "current_id": (self.profile or {}).get("id", ""), "updated_at": 0}
+        try:
+            for fn in os.listdir(WORLD_DIR):
+                if not fn.endswith(".json"):
+                    continue
+                try:
+                    with open(os.path.join(WORLD_DIR, fn), "r", encoding="utf-8") as f:
+                        data["worlds"][fn[:-5]] = json.load(f)
+                except Exception:
+                    pass
+            for fn in os.listdir(MEMORY_DIR):
+                if not fn.endswith(".json"):
+                    continue
+                try:
+                    with open(os.path.join(MEMORY_DIR, fn), "r", encoding="utf-8") as f:
+                        m = json.load(f)
+                    data["memories"][fn[:-5]] = m
+                    data["updated_at"] = max(data["updated_at"], int(m.get("updated_at", 0)))
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        self.last_assist = {"field": "dump_all", **data}
+        self.last_op = "dump_all"
+
+    def do_restore_all(self, blob):
+        """从浏览器本地存档恢复全部世界与记忆。"""
+        blob = blob if isinstance(blob, dict) else {}
+        worlds = blob.get("worlds") if isinstance(blob.get("worlds"), dict) else {}
+        memories = blob.get("memories") if isinstance(blob.get("memories"), dict) else {}
+        n_w = n_m = 0
+        try:
+            for wid, prof in worlds.items():
+                if isinstance(prof, dict) and prof.get("id"):
+                    with open(os.path.join(WORLD_DIR, str(prof["id"]) + ".json"),
+                              "w", encoding="utf-8", newline="\n") as f:
+                        json.dump(prof, f, ensure_ascii=False, indent=2)
+                    n_w += 1
+            for wid, mem in memories.items():
+                if isinstance(mem, dict) and "history" in mem:
+                    with open(os.path.join(MEMORY_DIR, str(wid) + ".json"),
+                              "w", encoding="utf-8", newline="\n") as f:
+                        json.dump(mem, f, ensure_ascii=False, indent=2)
+                    n_m += 1
+            if worlds:
+                target = blob.get("current_id") or next(iter(worlds))
+                prof = self.load_world(target) or {}
+                self.profile = prof if prof.get("id") else None
+                self.mode = "game" if self.profile else "worlds"
+                if self.profile and os.path.exists(self.memory_path(target)):
+                    self.history = self.load_memory(target) or []
+        except Exception as e:
+            self.last_assist = {"field": "restore_all", "ok": False, "error": str(e)[:80]}
+            return
+        self.last_assist = {"field": "restore_all", "ok": True,
+                            "worlds": n_w, "memories": n_m}
+        self.last_op = "restore_all"
+
     def handle(self, payload, code=None, local=False):
         # 远程访问需要访问码；本机访问免码
         if (not local) and self.access_code and code != self.access_code:
@@ -1094,7 +1155,11 @@ class Controller:
             action = payload.get("action", "state")
             self.last_assist = None
             try:
-                if action == "world_create":
+                if action == "dump_all":
+                    self.do_dump_all()
+                elif action == "restore_all":
+                    self.do_restore_all(payload.get("data"))
+                elif action == "world_create":
                     self.do_world_create(payload.get("profile"))
                 elif action == "world_open":
                     self.do_world_open(payload.get("id", ""))
