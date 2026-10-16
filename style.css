@@ -157,7 +157,7 @@ button:disabled { opacity: 0.45; cursor: wait; }
 
 #pin-mask {
   position: fixed; inset: 0; background: rgba(60, 45, 15, 0.55);
-  display: flex; align-items: center; justify-content: center; z-index: 99;
+  display: flex; align-items: center; justify-content: center; z-index: 10000;
 }
 #pin-modal {
   width: min(400px, 92vw);
