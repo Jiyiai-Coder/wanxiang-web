@@ -2686,6 +2686,7 @@ post({ action: "state" }, { noTyping: true })
 // 双保险：界面渲染成功后也隐藏连接层
 const _origApply = applyState;
 applyState = function (s) {
+  if (s && s.error === "need_code") return;
   _origApply(s);
   bootHide();
 };
