@@ -2072,7 +2072,7 @@ class Handler(BaseHTTPRequestHandler):
                     pass
             self._send(404, "Not Found", "text/plain; charset=utf-8")
         elif path == "/api/tts":
-            local = self.client_address[0] in ("127.0.0.1", "::1")
+            local = (self.client_address[0] in ("127.0.0.1", "::1")) and (os.environ.get("WX_FORCE_CODE") != "1")
             q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             text = (q.get("text") or [""])[0]
             slot = (q.get("slot") or ["gentle"])[0]
@@ -2107,7 +2107,7 @@ class Handler(BaseHTTPRequestHandler):
             payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
         except Exception:
             payload = {}
-        local = self.client_address[0] in ("127.0.0.1", "::1")
+        local = (self.client_address[0] in ("127.0.0.1", "::1")) and (os.environ.get("WX_FORCE_CODE") != "1")
         code = self.headers.get("X-WX-Code") or ""
         self._send(200, get_controller().handle(payload, code, local))
 
